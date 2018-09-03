@@ -1,6 +1,8 @@
 # fz_ip_pool
 fz的分布式并行代理ip池
 
+旨在: 获取真实高匿可复用proxy ip
+
 ## 架构
 celery + redis + spiders
 
@@ -41,6 +43,9 @@ celery multi start w3 -A proxy_tasks
 ```
 
 #### 3. python3 main.py
+
+## API demo
+eg: api.py's IpPoolsObj class
 
 ## 状态监控
 ```bash
