@@ -40,6 +40,7 @@ class IpPoolsObj(object):
         _ = self._get_all_ip_proxy()
         if _ == []:
             return ''
+
         random_porxy = choice(_)
 
         return 'http://{}:{}'.format(

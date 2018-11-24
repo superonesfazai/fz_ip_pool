@@ -28,7 +28,7 @@ proxy_list_key_name = 'proxy_tasks'
 high_proxy_list_key_name = 'h_proxy_list'
 
 # 高匿proxy低于以下分数就删除, 默认100
-MIN_SCORE = 50
+MIN_SCORE = 60
 
 # 测试地址
 TEST_URL = 'http://ip111.cn'
@@ -45,6 +45,9 @@ start_up_ip_url_list = [
     'http://www.proxylists.net/http_highanon.txt',
     'https://www.rmccurdy.com/scripts/proxy/good.txt',
 ]
+
+# server port
+SERVER_PORT = 8002
 
 # 可扩展的代理抓取对象
 parser_list = [

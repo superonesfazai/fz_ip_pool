@@ -27,6 +27,9 @@ from settings import (
     high_proxy_list_key_name,
     TEST_HTTP_HEADER,
     start_up_ip_url_list,)
+from exception import (
+    NotIpException,
+)
 
 from fzutils.time_utils import get_shanghai_time
 from fzutils.internet_utils import get_random_pc_ua
@@ -65,9 +68,40 @@ def _get_proxy(self, random_parser_list_item_index, proxy_url) -> list:
     '''
     def parse_body(body):
         '''解析url body'''
-        def _get_ip_type(ip_type):
+        def _get_ip(**kwargs) -> str:
+            tr = kwargs['tr']
+            ip_selector = kwargs['ip_selector']
+
+            ip = Selector(text=tr).css('{} ::text'.format(ip_selector)).extract_first()
+            assert ip is not None, 'ip为None!'
+            ip = re.compile(r'<script .*?</script>').sub('', ip)
+            if re.compile('\d+').findall(ip) == []:  # 处理不是ip地址
+                raise NotIpException
+
+            lg.info(str(ip))
+            ip = re.compile('\d+\.\d+\.\d+\.\d+').findall(ip)[0]
+            assert ip != '', 'ip为空值!'
+
+            return ip
+
+        def _get_port(**kwargs) -> str:
+            tr = kwargs['tr']
+            port_selector = kwargs['port_selector']
+
+            port = Selector(text=tr).css('{} ::text'.format(port_selector)).extract_first()
+            assert port != '', 'port为空值!'
+
+            return port
+
+        def _get_ip_type(**kwargs) -> str:
             '''获取ip_type'''
+            tr = kwargs['tr']
+            ip_type_selector = kwargs['ip_type_selector']
+
+            ip_type = Selector(text=tr).css('{} ::text'.format(ip_type_selector)).extract_first()
+            assert ip_type != '', 'ip_type为空值!'
             # return 'http' if ip_type == 'HTTP' else 'https'
+
             return 'http'       # 全部返回'http'
 
         _ = []
@@ -87,27 +121,20 @@ def _get_proxy(self, random_parser_list_item_index, proxy_url) -> list:
             return []
 
         for tr in Selector(text=body).css(part_selector).extract():
-            o = ProxyItem()
             try:
-                ip = Selector(text=tr).css('{} ::text'.format(ip_selector)).extract_first()
-                assert ip is not None, 'ip为None!'
-                ip = re.compile(r'<script .*?</script>').sub('', ip)
-                if re.compile('\d+').findall(ip) == []:     # 处理不是ip地址
-                    continue
-                lg.info(str(ip))
-                ip = re.compile('\d+\.\d+\.\d+\.\d+').findall(ip)[0]
-                assert ip != '', 'ip为空值!'
-                port = Selector(text=tr).css('{} ::text'.format(port_selector)).extract_first()
-                assert port != '', 'port为空值!'
-                ip_type = Selector(text=tr).css('{} ::text'.format(ip_type_selector)).extract_first()
-                assert ip_type != '', 'ip_type为空值!'
-                ip_type = _get_ip_type(ip_type)
+                ip = _get_ip(tr=tr, ip_selector=ip_selector)
+                port = _get_port(tr=tr, port_selector=port_selector)
+                ip_type = _get_ip_type(tr=tr, ip_type_selector=ip_type_selector)
+            except NotIpException:
+                continue
             except IndexError:
                 lg.error('获取ip时索引异常!跳过!')
                 continue
             except (AssertionError, Exception):
                 lg.error('遇到错误:', exc_info=True)
                 continue
+
+            o = ProxyItem()
             o['ip'] = ip
             try:
                 o['port'] = int(port)
@@ -119,7 +146,7 @@ def _get_proxy(self, random_parser_list_item_index, proxy_url) -> list:
             o['score'] = 100
             o['last_check_time'] = str(get_shanghai_time())
             # lg.info('[+] {}:{}'.format(ip, port))
-            _.append(o)
+            _.append(dict(o))
 
         return _
 
@@ -247,7 +274,7 @@ def _get_proxies() -> dict:
     return proxies or {}        # 如果None则返回{}
 
 @app.task(name='proxy_tasks.check_proxy_status', bind=True)    # 一个绑定任务意味着任务函数的第一个参数总是任务实例本身(self)
-def check_proxy_status(self, proxy, timeout=CHECK_PROXY_TIMEOUT) -> bool:
+def check_proxy_status(self, proxy, local_ip, timeout=CHECK_PROXY_TIMEOUT) -> bool:
     '''
     检测代理状态, 突然发现, 免费网站写的信息不靠谱, 还是要自己检测代理的类型
     :param proxy: 待检测代理
@@ -255,16 +282,7 @@ def check_proxy_status(self, proxy, timeout=CHECK_PROXY_TIMEOUT) -> bool:
     '''
     # lg.info(str(self.request))
     res = False
-    headers = {
-        'Connection': 'keep-alive',
-        'Cache-Control': 'max-age=0',
-        'Upgrade-Insecure-Requests': '1',
-        'User-Agent': get_random_pc_ua(),
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Encoding': 'gzip, deflate',
-        'Accept-Language': 'zh-CN,zh;q=0.9',
-    }
-
+    headers = _get_base_headers()
     proxies = {
         'http': 'http://' + proxy,
         # 'https': 'https://' + proxy,
@@ -277,13 +295,14 @@ def check_proxy_status(self, proxy, timeout=CHECK_PROXY_TIMEOUT) -> bool:
             proxy_connection = content.get('headers', {}).get('Proxy-Connection', None)
             lg.info('Proxy-Connection: {}'.format(proxy_connection))
             ip = content.get('origin', '')
-            if ',' in ip:           # 两个ip, 匿名度: 透明
-                pass
-            elif proxy_connection:
+            assert ip != '', 'ip为空!'
+            if ',' in ip\
+                    or proxy_connection:           # 两个ip, 匿名度: 透明
                 pass
             else:                   # 只抓取高匿名代理
-                lg.info(str('成功捕获一只高匿ip: {}'.format(proxy)))
-                return True
+                if local_ip != ip:
+                    lg.info(str('成功捕获一只高匿ip: {}'.format(proxy)))
+                    return True
         else:
             pass
     except Exception:

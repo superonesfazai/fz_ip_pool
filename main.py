@@ -17,6 +17,7 @@ from logging import (
 import re
 from pickle import dumps
 from random import randint
+from termcolor import colored
 from celery.exceptions import TimeoutError
 
 from settings import (
@@ -37,6 +38,7 @@ from fzutils.safe_utils import get_uuid3
 from fzutils.sql_utils import BaseRedisCli
 from fzutils.data.list_utils import list_remove_repeat_dict
 from fzutils.linux_utils import _get_simulate_logger
+from fzutils.ip_utils import get_local_external_network_ip
 
 lg = set_logger(
     log_file_name=SPIDER_LOG_PATH + str(get_shanghai_time())[0:10]+'.log',
@@ -45,6 +47,8 @@ lg = set_logger(
 redis_cli = BaseRedisCli()
 _key = get_uuid3(proxy_list_key_name)  # 存储proxy_list的key
 _h_key = get_uuid3(high_proxy_list_key_name)
+# 本地外网ip值
+local_ip = ''
 
 def get_proxy_process_data():
     '''
@@ -178,7 +182,7 @@ def check_all_proxy(origin_proxy_data, redis_key_name, delete_score):
 
             proxy = ip + ':' + str(port)
             # lg.info('testing {}...'.format(proxy))
-            async_obj = check_proxy_status.apply_async(args=[proxy,],)
+            async_obj = check_proxy_status.apply_async(args=[proxy, local_ip],)
             resutls.append({
                 'proxy_info': proxy_info,
                 'async_obj': async_obj,
@@ -295,13 +299,17 @@ def check_all_proxy(origin_proxy_data, redis_key_name, delete_score):
     return True
 
 def main():
-    global time_str
+    global time_str, local_ip
 
+    _welcome()
+    print('Getting local ip...')
+    local_ip = get_local_external_network_ip()
+    assert local_ip != '', 'local_ip获取失败!'
+    print('[+] local ip: {}'.format(local_ip))
     while True:
         origin_proxy_data = list_remove_repeat_dict(
             target=deserializate_pickle_object(redis_cli.get(_key) or dumps([])),
             repeat_key='ip')
-        # print()
         while len(origin_proxy_data) < MAX_PROXY_NUM:
             print('\r' + _get_simulate_logger() + 'Ip Pools --->>> 已存在proxy_num(匿名度未知): {}'.format(len(origin_proxy_data)), end='', flush=True)
             get_proxy_process_data()
@@ -323,6 +331,32 @@ def main():
                 repeat_key='ip')
             lg.info('Async Checking hign_proxy(高匿名)状态...')
             check_all_proxy(high_origin_proxy_list, redis_key_name=_h_key, delete_score=MIN_SCORE)
+
+def _welcome() -> None:
+    '''
+    欢迎页面
+    :return:
+    '''
+    _welcome = r'''
+      /$$$$$$                  /$$                                               /$$
+     /$$__  $$                |__/                                              | $$
+    | $$  \__//$$$$$$$$        /$$  /$$$$$$         /$$$$$$   /$$$$$$   /$$$$$$ | $$
+    | $$$$   |____ /$$/       | $$ /$$__  $$       /$$__  $$ /$$__  $$ /$$__  $$| $$
+    | $$_/      /$$$$/        | $$| $$  \ $$      | $$  \ $$| $$  \ $$| $$  \ $$| $$
+    | $$       /$$__/         | $$| $$  | $$      | $$  | $$| $$  | $$| $$  | $$| $$
+    | $$      /$$$$$$$$       | $$| $$$$$$$/      | $$$$$$$/|  $$$$$$/|  $$$$$$/| $$
+    |__/     |________//$$$$$$|__/| $$____//$$$$$$| $$____/  \______/  \______/ |__/
+                      |______/    | $$    |______/| $$                              
+                                  | $$            | $$                              
+                                  |__/            |__/                              
+    '''
+    _author = r'''
+                                                                       By: super_fazai
+    '''
+    print(colored(_welcome, 'green'))
+    print(colored(_author, 'red'))
+
+    return None
 
 if __name__ == '__main__':
     try:
