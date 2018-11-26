@@ -8,8 +8,7 @@
 
 from celery.utils.log import get_task_logger
 from random import choice
-from scrapy.selector import Selector
-import requests
+from requests import session
 from requests.exceptions import (
     ConnectTimeout,
     ProxyError,
@@ -41,6 +40,7 @@ from fzutils.common_utils import (
     json_2_dict,
     delete_list_null_str,)
 from fzutils.spider.fz_requests import Requests
+from fzutils.spider.selector import parse_field
 
 app = init_celery_app()
 lg = get_task_logger('proxy_tasks')             # 当前task的logger对象, tasks内部保持使用原生celery log对象
@@ -72,8 +72,8 @@ def _get_proxy(self, random_parser_list_item_index, proxy_url) -> list:
             tr = kwargs['tr']
             ip_selector = kwargs['ip_selector']
 
-            ip = Selector(text=tr).css('{} ::text'.format(ip_selector)).extract_first()
-            assert ip is not None, 'ip为None!'
+            ip = parse_field(parser=ip_selector, target_obj=tr)
+            assert ip != '', 'ip为空值!'
             ip = re.compile(r'<script .*?</script>').sub('', ip)
             if re.compile('\d+').findall(ip) == []:  # 处理不是ip地址
                 raise NotIpException
@@ -88,7 +88,7 @@ def _get_proxy(self, random_parser_list_item_index, proxy_url) -> list:
             tr = kwargs['tr']
             port_selector = kwargs['port_selector']
 
-            port = Selector(text=tr).css('{} ::text'.format(port_selector)).extract_first()
+            port = parse_field(parser=port_selector, target_obj=tr)
             assert port != '', 'port为空值!'
 
             return port
@@ -98,7 +98,7 @@ def _get_proxy(self, random_parser_list_item_index, proxy_url) -> list:
             tr = kwargs['tr']
             ip_type_selector = kwargs['ip_type_selector']
 
-            ip_type = Selector(text=tr).css('{} ::text'.format(ip_type_selector)).extract_first()
+            ip_type = parse_field(parser=ip_type_selector, target_obj=tr)
             assert ip_type != '', 'ip_type为空值!'
             # return 'http' if ip_type == 'HTTP' else 'https'
 
@@ -107,20 +107,20 @@ def _get_proxy(self, random_parser_list_item_index, proxy_url) -> list:
         _ = []
         parser_obj = parser_list[random_parser_list_item_index]
         try:
-            part_selector = parser_obj.get('part', '')
-            assert part_selector != '', '获取到part为空值!'
+            part_selector = parser_obj.get('part', {})
+            assert part_selector != {}, '获取到part为空值!'
             position = parser_obj.get('position', {})
             assert position != {}, '获取到position为空dict!'
-            ip_selector =  position.get('ip', '')
-            assert ip_selector != '', '获取到ip_selector为空值!'
-            port_selector = position.get('port', '')
-            assert port_selector != '', '获取到port_selector为空值!'
-            ip_type_selector = position.get('ip_type', '')
-            assert ip_type_selector != '', '获取到ip_type_selector为空值!'
+            ip_selector =  position.get('ip', {})
+            assert ip_selector != {}, '获取到ip_selector为空dict!'
+            port_selector = position.get('port', {})
+            assert port_selector != {}, '获取到port_selector为空dict!'
+            ip_type_selector = position.get('ip_type', {})
+            assert ip_type_selector != {}, '获取到ip_type_selector为空dict!'
         except AssertionError:
             return []
 
-        for tr in Selector(text=body).css(part_selector).extract():
+        for tr in parse_field(parser=part_selector, target_obj=body, is_first=False):
             try:
                 ip = _get_ip(tr=tr, ip_selector=ip_selector)
                 port = _get_port(tr=tr, port_selector=port_selector)
@@ -154,19 +154,20 @@ def _get_proxy(self, random_parser_list_item_index, proxy_url) -> list:
     try:
         encoding = parser_list[random_parser_list_item_index].get('charset')
         proxies = _get_proxies()
-        response = requests.get(
+        with session() as s:
+            response = s.get(
             url=proxy_url,
             headers=_get_base_headers(),
             params=None,
             cookies=None,
             proxies=proxies,
             timeout=CHECK_PROXY_TIMEOUT)
-        try:
-            body = response.content.decode(encoding)
-        except UnicodeDecodeError:
-            body = response.text
-        body = Requests._wash_html(body)
-        # lg.info(body)
+            try:
+                body = response.content.decode(encoding)
+            except UnicodeDecodeError:
+                body = response.text
+            body = Requests._wash_html(body)
+            # lg.info(body)
     except (ConnectTimeout, ProxyError, ReadTimeout, ConnectionError, TooManyRedirects) as e:
         lg.error('遇到错误: {}'.format(e.args[0]))
         return []
@@ -200,11 +201,13 @@ def _get_66_ip_list():
         ('api', '66ip'),
     )
 
-    try:
-        response = requests.get('http://www.66ip.cn/nmtq.php', headers=_get_base_headers(), params=params, cookies=None)
-    except Exception:
-        return []
-    body = Requests._wash_html(response.content.decode('gbk'))
+    with session() as s:
+        try:
+            response = s.get('http://www.66ip.cn/nmtq.php', headers=_get_base_headers(), params=params, cookies=None)
+        except Exception:
+            return []
+
+        body = Requests._wash_html(response.content.decode('gbk'))
     try:
         part = re.compile(r'</script>(.*)</div>').findall(body)[0]
     except IndexError:
@@ -223,7 +226,9 @@ def get_start_up_ip_list(url):
     :param url:
     :return:
     '''
-    body = requests.get(url, headers=_get_base_headers()).text
+    with session() as s:
+        body = s.get(url, headers=_get_base_headers()).text
+
     if body == '':
         return []
     tmp_ip_list = delete_list_null_str(body.split('\r\n'))
@@ -288,23 +293,24 @@ def check_proxy_status(self, proxy, local_ip, timeout=CHECK_PROXY_TIMEOUT) -> bo
         # 'https': 'https://' + proxy,
     }
     try:
-        response = requests.get(url=TEST_HTTP_HEADER, headers=headers, proxies=proxies, timeout=timeout)
-        lg.info(str(response.text))
-        if response.ok:
-            content = json_2_dict(json_str=response.text)
-            proxy_connection = content.get('headers', {}).get('Proxy-Connection', None)
-            lg.info('Proxy-Connection: {}'.format(proxy_connection))
-            ip = content.get('origin', '')
-            assert ip != '', 'ip为空!'
-            if ',' in ip\
-                    or proxy_connection:           # 两个ip, 匿名度: 透明
+        with session() as s:
+            response = s.get(url=TEST_HTTP_HEADER, headers=headers, proxies=proxies, timeout=timeout)
+            lg.info(str(response.text))
+            if response.ok:
+                content = json_2_dict(json_str=response.text)
+                proxy_connection = content.get('headers', {}).get('Proxy-Connection', None)
+                lg.info('Proxy-Connection: {}'.format(proxy_connection))
+                ip = content.get('origin', '')
+                assert ip != '', 'ip为空!'
+                if ',' in ip\
+                        or proxy_connection:           # 两个ip, 匿名度: 透明
+                    pass
+                else:                   # 只抓取高匿名代理
+                    if local_ip != ip:
+                        lg.info(str('成功捕获一只高匿ip: {}'.format(proxy)))
+                        return True
+            else:
                 pass
-            else:                   # 只抓取高匿名代理
-                if local_ip != ip:
-                    lg.info(str('成功捕获一只高匿ip: {}'.format(proxy)))
-                    return True
-        else:
-            pass
     except Exception:
         pass
 
