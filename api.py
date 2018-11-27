@@ -21,14 +21,18 @@ from fzutils.safe_utils import get_uuid3
 from fzutils.data.pickle_utils import deserializate_pickle_object
 
 class IpPoolsObj(object):
-    def __init__(self):
+    def __init__(self, _k=high_proxy_list_key_name):
         self.redis_cli = BaseRedisCli()
         # self._k = get_uuid3('proxy_tasks')
-        self._k = get_uuid3(high_proxy_list_key_name)
+        self._k = get_uuid3(_k)
 
-    def _get_all_ip_proxy(self) -> list:
-        '''得到所有ip proxy'''
-        _ = deserializate_pickle_object(self.redis_cli.get(name=self._k) or dumps([]))
+    def _get_all_ip_proxy(self, _k=high_proxy_list_key_name) -> list:
+        '''
+        得到所有ip proxy
+        :param _k: 原始值
+        :return:
+        '''
+        _ = deserializate_pickle_object(self.redis_cli.get(name=get_uuid3(_k)) or dumps([]))
 
         return _
 

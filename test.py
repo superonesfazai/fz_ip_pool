@@ -81,3 +81,7 @@ def proxy_ip_check(url, headers, ip, port):
 # print('成功率:{}%'.format(success_num/h_proxys_len*100))
 
 
+from fzutils.ip_utils import get_ip_address_info
+
+ip_info = get_ip_address_info(ip='180.104.63.159')
+print(ip_info)

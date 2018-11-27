@@ -14,7 +14,7 @@
 SPIDER_LOG_PATH = '/Users/afa/myFiles/my_spider_logs/fz_ip_pool/'
 
 # 匿名度未知的ip池最大代理数
-MAX_PROXY_NUM = 500
+MAX_PROXY_NUM = 600
 
 # 检索剩余ip数量的sleep time 单位秒
 WAIT_TIME = 10
@@ -48,6 +48,9 @@ start_up_ip_url_list = [
 
 # server port
 SERVER_PORT = 8002
+
+# 采集时, _get_proxy的并发量
+GET_PROXY_CONCURRENCY_NUM = 45
 
 # 可扩展的代理抓取对象
 parser_list = [
@@ -291,28 +294,111 @@ parser_list = [
             'max': 7,
         }
     },
+    {
+        'urls': [
+            'http://www.iphai.com',
+        ],
+        'charset': 'utf-8',
+        'part': {
+            'method': 'css',
+            'selector': 'table tr',
+        },
+        'position': {
+            'ip': {
+                'method': 'css',
+                'selector': 'td:nth-child(1) ::text',
+            },
+            'port': {
+                'method': 'css',
+                'selector': 'td:nth-child(2) ::text',
+            },
+            'ip_type': {
+                'method': 'css',
+                'selector': 'td:nth-child(4) ::text',
+            },
+        },
+        'page_range': {
+            'min': 0,  # 不取值
+            'max': 0,
+        }
+    },
+    {
+        'urls': 'http://www.89ip.cn/index_{}.html',
+        'charset': 'utf-8',
+        'part': {
+            'method': 'css',
+            'selector': 'tbody tr',
+        },
+        'position': {
+            'ip': {
+                'method': 'css',
+                'selector': 'td:nth-child(1) ::text',
+            },
+            'port': {
+                'method': 'css',
+                'selector': 'td:nth-child(2) ::text',
+            },
+            'ip_type': None,
+        },
+        'page_range': {
+            'min': 1,
+            'max': 9,
+        },
+    },
+    {
+        'urls': [
+            'http://lab.crossincode.com/proxy',
+        ],
+        'charset': 'utf-8',
+        'part': {
+            'method': 'css',
+            'selector': 'table tr',
+        },
+        'position': {
+            'ip': {
+                'method': 'css',
+                'selector': 'td:nth-child(1) ::text',
+            },
+            'port': {
+                'method': 'css',
+                'selector': 'td:nth-child(2) ::text',
+            },
+            'ip_type': {
+                'method': 'css',
+                'selector': 'td:nth-child(4) ::text',
+            },
+        },
+        'page_range': {
+            'min': 0,  # 不取值
+            'max': 0,
+        }
+    },
 
     # # 下面为弃用代理
-    # {   # 西刺代理可用质量过低, 弃用
-    #     'urls': 'http://www.xicidaili.com/nn/{}',
-    #     'charset': 'utf-8',
-    #     'part': {
-    #         'method': 'css',
-    #         'selector': 'table#ip_list tr',
-    #     },
-    #     'position': {
-    #         'ip': {
-    #             'method': 'css',
-    #             'selector': 'td:nth-child(2) ::text',
-    #         },
-    #         'port': {
-    #             'method': 'css',
-    #             'selector': 'td:nth-child(3) ::text',
-    #         },
-    #         'ip_type': {
-    #             'method': 'css',
-    #             'selector': 'td:nth-child(6) ::text',
-    #         },
-    #     },
-    # }
+    {   # 西刺代理可用质量过低, 弃用
+        'urls': 'http://www.xicidaili.com/nn/{}',
+        'charset': 'utf-8',
+        'part': {
+            'method': 'css',
+            'selector': 'table#ip_list tr',
+        },
+        'position': {
+            'ip': {
+                'method': 'css',
+                'selector': 'td:nth-child(2) ::text',
+            },
+            'port': {
+                'method': 'css',
+                'selector': 'td:nth-child(3) ::text',
+            },
+            'ip_type': {
+                'method': 'css',
+                'selector': 'td:nth-child(6) ::text',
+            },
+        },
+        'page_range': {
+            'min': 1,
+            'max': 1500,
+        }
+    }
 ]

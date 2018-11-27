@@ -16,3 +16,5 @@ class ProxyItem(Item):
     anonymity = Field()         # 匿名度(0:透明, 1:高匿)
     score = Field()             # 代理分数
     last_check_time = Field()   # 最后验证时间
+    # country = Field()           # 国家
+    # city = Field()              # 城市

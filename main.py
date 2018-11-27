@@ -24,10 +24,11 @@ from settings import (
     MAX_PROXY_NUM,
     SPIDER_LOG_PATH,
     WAIT_TIME,
-    CHECK_PROXY_TIMEOUT,
     proxy_list_key_name,
     high_proxy_list_key_name,
-    MIN_SCORE,)
+    MIN_SCORE,
+    GET_PROXY_CONCURRENCY_NUM,)
+from api import IpPoolsObj
 
 from fzutils.log_utils import set_logger
 from fzutils.time_utils import get_shanghai_time
@@ -49,6 +50,8 @@ _key = get_uuid3(proxy_list_key_name)  # 存储proxy_list的key
 _h_key = get_uuid3(high_proxy_list_key_name)
 # 本地外网ip值
 local_ip = ''
+# ip pool obj
+ip_pools_obj = IpPoolsObj(_k=high_proxy_list_key_name)
 
 def get_proxy_process_data():
     '''
@@ -59,17 +62,19 @@ def get_proxy_process_data():
         urls = kwargs.get('urls')
         page_range = kwargs.get('page_range', {})
         page_min, page_max = page_range['min'], page_range['max']
+        # 采集时, _get_proxy的并发量
+        max_range_num = GET_PROXY_CONCURRENCY_NUM if page_max >= GET_PROXY_CONCURRENCY_NUM else page_max
         random_parser_list_item_index = kwargs.get('random_parser_list_item_index')
 
         results = []
         if isinstance(urls, str):
-            tmp_page_num_list = list(set([randint(page_min, page_max) for i in range(1, 20)]))
+            tmp_page_num_list = list(set([randint(page_min, page_max) for i in range(1, max_range_num)]))
             urls = [urls.format(page_num) for page_num in tmp_page_num_list]
         elif isinstance(urls, list):
             _urls = []
             for item in urls:
                 if re.compile('{}').findall(item) != []:
-                    tmp_page_num_list = list(set([randint(page_min, page_max) for i in range(1, 20)]))
+                    tmp_page_num_list = list(set([randint(page_min, page_max) for i in range(1, max_range_num)]))
                     _s = [item.format(page_num) for page_num in tmp_page_num_list]
                     _urls += _s
                 else:
@@ -116,8 +121,7 @@ def get_proxy_process_data():
 
     def _handle_tasks_result_list(**kwargs):
         all = kwargs.get('all', [])
-        origin_data = redis_cli.get(_key) or dumps([])  # get为None, 则返回[]
-        old = deserializate_pickle_object(origin_data)
+        old = ip_pools_obj._get_all_ip_proxy(_k=proxy_list_key_name)
 
         for res_content in all:
             if res_content != []:
@@ -194,7 +198,7 @@ def check_all_proxy(origin_proxy_data, redis_key_name, delete_score):
         '''得到结果集'''
         def write_hign_proxy_info_2_redis(one_proxy_info):
             '''redis新写入高匿名ip'''
-            old_h_proxy_list = deserializate_pickle_object(redis_cli.get(name=_h_key) or dumps([]))
+            old_h_proxy_list = ip_pools_obj._get_all_ip_proxy(_k=high_proxy_list_key_name)
             old_ip_list = [i.get('ip') for i in old_h_proxy_list]
             if one_proxy_info.get('ip') not in old_ip_list:
                 old_score = one_proxy_info.get('score')
@@ -308,14 +312,14 @@ def main():
     print('[+] local ip: {}'.format(local_ip))
     while True:
         origin_proxy_data = list_remove_repeat_dict(
-            target=deserializate_pickle_object(redis_cli.get(_key) or dumps([])),
+            target=ip_pools_obj._get_all_ip_proxy(_k=proxy_list_key_name),
             repeat_key='ip')
         while len(origin_proxy_data) < MAX_PROXY_NUM:
             print('\r' + _get_simulate_logger() + 'Ip Pools --->>> 已存在proxy_num(匿名度未知): {}'.format(len(origin_proxy_data)), end='', flush=True)
             get_proxy_process_data()
             # 重置
             origin_proxy_data = list_remove_repeat_dict(
-                target=deserializate_pickle_object(redis_cli.get(_key) or dumps([])),
+                target=ip_pools_obj._get_all_ip_proxy(_k=proxy_list_key_name),
                 repeat_key='ip')
         else:
             print()
@@ -327,7 +331,7 @@ def main():
 
             '''删除失效的, 时刻保持最新高匿可用proxy'''
             high_origin_proxy_list = list_remove_repeat_dict(
-                target=deserializate_pickle_object(redis_cli.get(_h_key) or dumps([])),
+                target=ip_pools_obj._get_all_ip_proxy(_k=high_proxy_list_key_name),
                 repeat_key='ip')
             lg.info('Async Checking hign_proxy(高匿名)状态...')
             check_all_proxy(high_origin_proxy_list, redis_key_name=_h_key, delete_score=MIN_SCORE)

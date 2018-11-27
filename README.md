@@ -94,12 +94,23 @@ parser_list = [
     {
         'urls': 'http://www.66ip.cn/{}.html',
         'charset': 'gb2312',
-        'type': 'css',
-        'part': 'div.containerbox table tr',
+        'part': {
+            'method': 'css',
+            'selector': 'div.containerbox table tr',
+        },
         'position': {
-            'ip': 'td:nth-child(1)',
-            'port': 'td:nth-child(2)',
-            'ip_type': 'td:nth-child(4)',
+            'ip': {
+                'method': 'css',
+                'selector': 'td:nth-child(1) ::text',
+            },
+            'port': {
+                'method': 'css',
+                'selector': 'td:nth-child(2) ::text',
+            },
+            'ip_type': {
+                'method': 'css',
+                'selector': 'td:nth-child(4) ::text',
+            },
         },
         'page_range': {
             'min': 1,       # 最小页码
@@ -109,12 +120,23 @@ parser_list = [
     {
         'urls': 'http://www.mimiip.com/gngao/{}',
         'charset': 'utf-8',
-        'type': 'css',
-        'part': 'div.content table.list tr',
+        'part': {
+            'method': 'css',
+            'selector': 'div.content table.list tr',
+        },
         'position': {
-            'ip': 'td:nth-child(1)',
-            'port': 'td:nth-child(2)',
-            'ip_type': 'td:nth-child(5)',
+            'ip': {
+                'method': 'css',
+                'selector': 'td:nth-child(1) ::text',
+            },
+            'port': {
+                'method': 'css',
+                'selector': 'td:nth-child(2) ::text',
+            },
+            'ip_type': {
+                'method': 'css',
+                'selector': 'td:nth-child(5) ::text',
+            },
         },
         'page_range': {
             'min': 1,
@@ -124,12 +146,23 @@ parser_list = [
     {
         'urls': 'http://www.ip3366.net/?stype=1&page={}',
         'charset': 'gb2312',
-        'type': 'css',
-        'part': 'div#list tbody tr',
+        'part': {
+            'method': 'css',
+            'selector': 'div#list tbody tr',
+        },
         'position': {
-            'ip': 'td:nth-child(1)',
-            'port': 'td:nth-child(2)',
-            'ip_type': 'td:nth-child(4)',
+            'ip': {
+                'method': 'css',
+                'selector': 'td:nth-child(1) ::text',
+            },
+            'port': {
+                'method': 'css',
+                'selector': 'td:nth-child(2) ::text',
+            },
+            'ip_type': {
+                'method': 'css',
+                'selector': 'td:nth-child(4) ::text',
+            },
         },
         'page_range': {
             'min': 1,
@@ -139,12 +172,23 @@ parser_list = [
     {
         'urls': 'http://www.data5u.com/free/gngn/index{}.shtml',
         'charset': 'utf-8',
-        'type': 'css',
-        'part': 'div.wlist ul.l2',
+        'part': {
+            'method': 'css',
+            'selector': 'div.wlist ul.l2',
+        },
         'position': {
-            'ip': 'span:nth-child(1) li:nth-child(1)',
-            'port': 'span:nth-child(2) li:nth-child(1)',
-            'ip_type': 'span:nth-child(4) li:nth-child(1)',
+            'ip': {
+                'method': 'css',
+                'selector': 'span:nth-child(1) li:nth-child(1) ::text',
+            },
+            'port': {
+                'method': 'css',
+                'selector': 'span:nth-child(2) li:nth-child(1) ::text',
+            },
+            'ip_type': {
+                'method': 'css',
+                'selector': 'span:nth-child(4) li:nth-child(1) ::text',
+            },
         },
         'page_range': {
             'min': 1,
@@ -154,12 +198,23 @@ parser_list = [
     {
         'urls': 'http://ip.jiangxianli.com/?page={}',
         'charset': 'utf-8',
-        'type': 'css',
-        'part': 'table tr',
+        'part': {
+            'method': 'css',
+            'selector': 'table tr',
+        },
         'position': {
-            'ip': 'td:nth-child(2)',
-            'port': 'td:nth-child(3)',
-            'ip_type': 'td:nth-child(5)',
+            'ip': {
+                'method': 'css',
+                'selector': 'td:nth-child(2) ::text',
+            },
+            'port': {
+                'method': 'css',
+                'selector': 'td:nth-child(3) ::text',
+            },
+            'ip_type': {
+                'method': 'css',
+                'selector': 'td:nth-child(5) ::text',
+            },
         },
         'page_range': {
             'min': 1,
@@ -169,12 +224,23 @@ parser_list = [
     {
         'urls': 'https://www.kuaidaili.com/free/inha/{}',
         'charset': 'utf-8',
-        'type': 'css',
-        'part': 'div#list table tbody tr',
+        'part': {
+            'method': 'css',
+            'selector': 'div#list table tbody tr',
+        },
         'position': {
-            'ip': 'td:nth-child(1)',
-            'port': 'td:nth-child(2)',
-            'ip_type': 'td:nth-child(4)',
+            'ip': {
+                'method': 'css',
+                'selector': 'td:nth-child(1) ::text',
+            },
+            'port': {
+                'method': 'css',
+                'selector': 'td:nth-child(2) ::text',
+            },
+            'ip_type': {
+                'method': 'css',
+                'selector': 'td:nth-child(4) ::text',
+            },
         },
         'page_range': {
             'min': 1,
@@ -184,12 +250,23 @@ parser_list = [
     {
         'urls': 'http://mrhinkydink.com/proxies{}.htm',
         'charset': 'utf-8',
-        'type': 'css',
-        'part': 'table:nth-child(2) tr.text',
+        'part': {
+            'method': 'css',
+            'selector': 'table:nth-child(2) tr.text',
+        },
         'position': {
-            'ip': 'td:nth-child(1)',
-            'port': 'td:nth-child(2)',
-            'ip_type': 'td:nth-child(3)',
+            'ip': {
+                'method': 'css',
+                'selector': 'td:nth-child(1) ::text',
+            },
+            'port': {
+                'method': 'css',
+                'selector': 'td:nth-child(2) ::text',
+            },
+            'ip_type': {
+                'method': 'css',
+                'selector': 'td:nth-child(3) ::text',
+            },
         },
         'page_range': {
             'min': 2,
@@ -202,12 +279,23 @@ parser_list = [
             'http://www.iphai.com/free/wg',
         ],
         'charset': 'utf-8',
-        'type': 'css',
-        'part': 'table tr',
+        'part': {
+            'method': 'css',
+            'selector': 'table tr',
+        },
         'position': {
-            'ip': 'td:nth-child(1)',
-            'port': 'td:nth-child(2)',
-            'ip_type': 'td:nth-child(4)',
+            'ip': {
+                'method': 'css',
+                'selector': 'td:nth-child(1) ::text',
+            },
+            'port': {
+                'method': 'css',
+                'selector': 'td:nth-child(2) ::text',
+            },
+            'ip_type': {
+                'method': 'css',
+                'selector': 'td:nth-child(4) ::text',
+            },
         },
         'page_range': {
             'min': 0,   # 不取值
@@ -220,31 +308,136 @@ parser_list = [
             'http://www.swei360.com/free/?stype=3&page={}',
         ],
         'charset': 'gb2312',
-        'type': 'css',
-        'part': 'table.table tr',
+        'part': {
+            'method': 'css',
+            'selector': 'table.table tr',
+        },
         'position': {
-            'ip': 'td:nth-child(1)',
-            'port': 'td:nth-child(2)',
-            'ip_type': 'td:nth-child(4)',
+            'ip': {
+                'method': 'css',
+                'selector': 'td:nth-child(1) ::text',
+            },
+            'port': {
+                'method': 'css',
+                'selector': 'td:nth-child(2) ::text',
+            },
+            'ip_type': {
+                'method': 'css',
+                'selector': 'td:nth-child(4) ::text',
+            },
         },
         'page_range': {
             'min': 1,
             'max': 7,
         }
     },
+    {
+        'urls': [
+            'http://www.iphai.com',
+        ],
+        'charset': 'utf-8',
+        'part': {
+            'method': 'css',
+            'selector': 'table tr',
+        },
+        'position': {
+            'ip': {
+                'method': 'css',
+                'selector': 'td:nth-child(1) ::text',
+            },
+            'port': {
+                'method': 'css',
+                'selector': 'td:nth-child(2) ::text',
+            },
+            'ip_type': {
+                'method': 'css',
+                'selector': 'td:nth-child(4) ::text',
+            },
+        },
+        'page_range': {
+            'min': 0,  # 不取值
+            'max': 0,
+        }
+    },
+    {
+        'urls': 'http://www.89ip.cn/index_{}.html',
+        'charset': 'utf-8',
+        'part': {
+            'method': 'css',
+            'selector': 'tbody tr',
+        },
+        'position': {
+            'ip': {
+                'method': 'css',
+                'selector': 'td:nth-child(1) ::text',
+            },
+            'port': {
+                'method': 'css',
+                'selector': 'td:nth-child(2) ::text',
+            },
+            'ip_type': None,
+        },
+        'page_range': {
+            'min': 1,
+            'max': 9,
+        },
+    },
+    {
+        'urls': [
+            'http://lab.crossincode.com/proxy',
+        ],
+        'charset': 'utf-8',
+        'part': {
+            'method': 'css',
+            'selector': 'table tr',
+        },
+        'position': {
+            'ip': {
+                'method': 'css',
+                'selector': 'td:nth-child(1) ::text',
+            },
+            'port': {
+                'method': 'css',
+                'selector': 'td:nth-child(2) ::text',
+            },
+            'ip_type': {
+                'method': 'css',
+                'selector': 'td:nth-child(4) ::text',
+            },
+        },
+        'page_range': {
+            'min': 0,  # 不取值
+            'max': 0,
+        }
+    },
 
-    # 下面为弃用代理
-    # {   # 西刺代理可用质量过低, 弃用
-    #     'urls': 'http://www.xicidaili.com/nn/{}',
-    #     'charset': 'utf-8',
-    #     'type': 'css',
-    #     'part': 'table#ip_list tr',
-    #     'position': {
-    #         'ip': 'td:nth-child(2)',
-    #         'port': 'td:nth-child(3)',
-    #         'ip_type': 'td:nth-child(6)',
-    #     },
-    # }
+    # # 下面为弃用代理
+    {   # 西刺代理可用质量过低, 弃用
+        'urls': 'http://www.xicidaili.com/nn/{}',
+        'charset': 'utf-8',
+        'part': {
+            'method': 'css',
+            'selector': 'table#ip_list tr',
+        },
+        'position': {
+            'ip': {
+                'method': 'css',
+                'selector': 'td:nth-child(2) ::text',
+            },
+            'port': {
+                'method': 'css',
+                'selector': 'td:nth-child(3) ::text',
+            },
+            'ip_type': {
+                'method': 'css',
+                'selector': 'td:nth-child(6) ::text',
+            },
+        },
+        'page_range': {
+            'min': 1,
+            'max': 1500,
+        }
+    }
 ]
 ```
 

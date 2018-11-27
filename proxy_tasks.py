@@ -41,6 +41,7 @@ from fzutils.common_utils import (
     delete_list_null_str,)
 from fzutils.spider.fz_requests import Requests
 from fzutils.spider.selector import parse_field
+from fzutils.ip_utils import get_ip_address_info
 
 app = init_celery_app()
 lg = get_task_logger('proxy_tasks')             # 当前task的logger对象, tasks内部保持使用原生celery log对象
@@ -99,7 +100,8 @@ def _get_proxy(self, random_parser_list_item_index, proxy_url) -> list:
             ip_type_selector = kwargs['ip_type_selector']
 
             ip_type = parse_field(parser=ip_type_selector, target_obj=tr)
-            assert ip_type != '', 'ip_type为空值!'
+            # 可空
+            # assert ip_type != '', 'ip_type为空值!'
             # return 'http' if ip_type == 'HTTP' else 'https'
 
             return 'http'       # 全部返回'http'
@@ -115,8 +117,9 @@ def _get_proxy(self, random_parser_list_item_index, proxy_url) -> list:
             assert ip_selector != {}, '获取到ip_selector为空dict!'
             port_selector = position.get('port', {})
             assert port_selector != {}, '获取到port_selector为空dict!'
-            ip_type_selector = position.get('ip_type', {})
-            assert ip_type_selector != {}, '获取到ip_type_selector为空dict!'
+            # 可为None
+            ip_type_selector = position.get('ip_type', None)
+            # assert ip_type_selector is not None, '获取到ip_type_selector为None!'
         except AssertionError:
             return []
 
@@ -145,6 +148,8 @@ def _get_proxy(self, random_parser_list_item_index, proxy_url) -> list:
             o['anonymity'] = 1
             o['score'] = 100
             o['last_check_time'] = str(get_shanghai_time())
+            # o['country'] = ''
+            # o['city'] = ''
             # lg.info('[+] {}:{}'.format(ip, port))
             _.append(dict(o))
 
@@ -315,3 +320,18 @@ def check_proxy_status(self, proxy, local_ip, timeout=CHECK_PROXY_TIMEOUT) -> bo
         pass
 
     return res
+
+@app.task(name='proxy_tasks.get_ip_address_info', bind=True)
+def get_ip_address_info(ip:str, timeout=CHECK_PROXY_TIMEOUT) -> dict:
+    '''
+    获取ip的address信息(国家)
+    :param ip:
+    :param timeout:
+    :return: {} or {'xx': 'xxxx'}
+    '''
+    try:
+        ip_info = get_ip_address_info(ip=ip)
+    except Exception as e:
+        return {}
+
+    return ip_info
