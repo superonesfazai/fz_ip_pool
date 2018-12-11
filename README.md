@@ -42,7 +42,7 @@ $ redis-cli
 #### 2. 运行proxy_spiders_tasks worker
 - worker多开(推荐)
 ```bash
-$ celery multi start w1 w2 w3 w4 w5 -A proxy_tasks -P eventlet -c 10
+$ celery multi start w1 w2 w3 w4 w5 -A proxy_tasks -P eventlet -c 15
 > Starting nodes...
 	> w1@afahostdeiMac.local: OK
 Stale pidfile exists - Removing it.
