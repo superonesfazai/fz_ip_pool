@@ -122,10 +122,22 @@ def get_proxy_process_data():
     def _handle_tasks_result_list(**kwargs):
         all = kwargs.get('all', [])
         old = ip_pools_obj._get_all_ip_proxy(_k=proxy_list_key_name)
+        # print(all)
+        # print(old)
 
         for res_content in all:
             if res_content != []:
-                old += res_content
+                # print(res_content)
+                try:
+                    for j in res_content:
+                        old.append(j)
+                except TypeError as e:
+                    # 处理'NotRegistered' object is not iterable, Task of kind 'proxy_tasks._get_proxy' never registered, please make sure it's imported., Task of kind 'proxy_tasks._get_proxy' never registered, please make sure it's imported.
+                    try:
+                        # print('{}, 跳过!'.format(e.args[0]))
+                        pass
+                    except:
+                        pass
 
         old = list_remove_repeat_dict(target=old, repeat_key='ip')
         old = serialize_obj_item_2_dict(old)      # 转化为dict, 避免反序列化时无法识别ProxyItem
