@@ -307,13 +307,25 @@ def check_proxy_status(self, proxy, local_ip, timeout=CHECK_PROXY_TIMEOUT) -> bo
                 lg.info('Proxy-Connection: {}'.format(proxy_connection))
                 ip = content.get('origin', '')
                 assert ip != '', 'ip为空!'
-                if ',' in ip\
-                        or proxy_connection:           # 两个ip, 匿名度: 透明
+                # TODO 老版本的判断 pass
+                # if ',' in ip\
+                #         or proxy_connection:           # 两个ip, 匿名度: 透明
+                #     pass
+                # else:                   # 只抓取高匿名代理
+                #     if local_ip != ip:
+                #         lg.info(str('成功捕获一只高匿ip: {}'.format(proxy)))
+                #         return True
+
+                # 新版判断, 新版不用代理请求httpbin返回格式: '原ip, 原ip'
+                local_ip_str = '{}, {}'.format(local_ip, local_ip)
+                if local_ip_str != ip \
+                        and local_ip not in ip:
+                    # print(now_ip)
+                    lg.info(str('成功捕获一只高匿ip: {}'.format(proxy)))
+                    return True
+                else:
                     pass
-                else:                   # 只抓取高匿名代理
-                    if local_ip != ip:
-                        lg.info(str('成功捕获一只高匿ip: {}'.format(proxy)))
-                        return True
+
             else:
                 pass
     except Exception:
